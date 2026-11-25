@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dominant surface ramp: Matte Instrument Carbon */
+  --bg-canvas: #0A0C0E;
+  --bg-surface: #111418;
+  --bg-elevated: #171B21;
+  --ink-primary: #F1F3F5;
+  --ink-secondary: #8A939E;
+  --ink-muted: #565F6B;
+  --rule-subtle: #20252D;
+  --rule-strong: #2E3540;
+
+  /* Single Accent (default: Signal Emerald — flat solid only) */
+  --accent: #10B981;
+  --accent-hover: #059669;
+  --accent-ink: #041A12;
+  --accent-tint: rgba(16, 185, 129, 0.12);
+  --accent-border: rgba(16, 185, 129, 0.36);
+
+  /* Fault / destructive semantic token (reserved strictly for errors) */
+  --status-danger: #E5484D;
+  --status-danger-tint: rgba(229, 72, 77, 0.12);
+
+  /* Typography tokens */
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Strict 8px spacing rhythm */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-12: 96px;
+}
+
+/* Flagsmith theme_accent flat-solid accent swaps (ZERO gradients) */
+[data-accent="emerald"] {
+  --accent: #10B981;
+  --accent-hover: #059669;
+  --accent-ink: #041A12;
+  --accent-tint: rgba(16, 185, 129, 0.12);
+  --accent-border: rgba(16, 185, 129, 0.36);
+}
+
+[data-accent="amber"] {
+  --accent: #F59E0B;
+  --accent-hover: #D97706;
+  --accent-ink: #1C1102;
+  --accent-tint: rgba(245, 158, 11, 0.12);
+  --accent-border: rgba(245, 158, 11, 0.36);
+}
+
+[data-accent="indigo"] {
+  --accent: #5B7CFA;
+  --accent-hover: #4366F5;
+  --accent-ink: #070E29;
+  --accent-tint: rgba(91, 124, 250, 0.14);
+  --accent-border: rgba(91, 124, 250, 0.38);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+    font-family: var(--font-sans);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  code,
+  pre,
+  kbd,
+  samp,
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
