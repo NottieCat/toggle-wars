@@ -1,9 +1,11 @@
 import * as React from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, Copy, CornerDownLeft, RotateCcw, Terminal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { EASE_TECHNICAL, LedgerRow, Reveal } from '@/lib/motion';
 
 export interface CopilotContextSnapshot {
   identity: string | null;
@@ -114,11 +116,24 @@ export const AiCopilotPanel: React.FC<AiCopilotPanelProps> = ({
   isOverridden = false,
   context,
 }) => {
+  const prefersReduced = useReducedMotion();
+  const transcriptRef = React.useRef<HTMLDivElement>(null);
   const [query, setQuery] = React.useState('');
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [entries, setEntries] = React.useState<DiagnosticEntry[]>(() => [
     buildDiagnosticResponse(PRESET_PROMPTS[0], context, 1),
   ]);
+
+  React.useEffect(() => {
+    const container = transcriptRef.current;
+    if (!container || entries.length <= 1) {
+      return;
+    }
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: prefersReduced ? 'auto' : 'smooth',
+    });
+  }, [entries.length, prefersReduced]);
 
   if (!enabled) {
     return null;
@@ -155,152 +170,171 @@ export const AiCopilotPanel: React.FC<AiCopilotPanelProps> = ({
 
   return (
     <section aria-labelledby="copilot-heading" className="py-16">
-      <div className="border border-rule-subtle bg-surface">
-        {/* Panel header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-6">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="accent">ai_copilot_widget = ON</Badge>
-              {isOverridden && <Badge variant="solid">OVERRIDDEN</Badge>}
-              <span className="font-mono text-micro uppercase text-ink-muted">
-                DIAGNOSTIC INSTRUMENT · IAD-EDGE-04
-              </span>
-            </div>
-
-            <h2
-              id="copilot-heading"
-              className="font-display text-display tracking-[-0.035em]"
-            >
-              <span className="font-extralight text-ink-secondary">Meridian</span>{' '}
-              <span className="font-extrabold text-ink-primary">Diagnostic Copilot</span>
-            </h2>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              setEntries([buildDiagnosticResponse(PRESET_PROMPTS[0], context, 1)])
-            }
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Reset Session</span>
-          </Button>
-        </div>
-
-        <Separator />
-
-        <div className="grid grid-cols-1 lg:grid-cols-12">
-          {/* Left runbook rail */}
-          <div className="space-y-6 border-b border-rule-subtle p-6 lg:col-span-5 lg:border-b-0 lg:border-r">
+      <Reveal>
+        <div className="border border-rule-subtle bg-surface">
+          {/* Panel header */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-6">
             <div className="space-y-2">
-              <p className="font-mono text-label uppercase text-ink-muted">
-                PRE-LOADED DIAGNOSTIC RUNBOOKS
-              </p>
-              <p className="font-sans text-xs text-ink-secondary">
-                Select a deterministic telemetry query or inspect live Flagsmith flag
-                context directly below.
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="accent">ai_copilot_widget = ON</Badge>
+                {isOverridden && <Badge variant="solid">OVERRIDDEN</Badge>}
+                <span className="font-mono text-micro uppercase text-ink-muted">
+                  DIAGNOSTIC INSTRUMENT · IAD-EDGE-04
+                </span>
+              </div>
+
+              <h2
+                id="copilot-heading"
+                className="font-display text-display tracking-[-0.035em]"
+              >
+                <span className="font-extralight text-ink-secondary">Meridian</span>{' '}
+                <span className="font-extrabold text-ink-primary">
+                  Diagnostic Copilot
+                </span>
+              </h2>
             </div>
 
-            <div className="flex flex-col gap-2">
-              {PRESET_PROMPTS.map((preset) => (
-                <Button
-                  key={preset}
-                  variant="secondary"
-                  size="md"
-                  className="h-auto justify-start whitespace-normal px-4 py-4 text-left font-mono text-xs text-ink-primary"
-                  onClick={() => runPrompt(preset)}
-                >
-                  <Terminal
-                    className="h-4 w-4 shrink-0 text-accent"
-                    aria-hidden="true"
-                  />
-                  <span>{preset}</span>
-                </Button>
-              ))}
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2 font-mono text-micro text-ink-muted tabular-nums">
-              <p className="uppercase text-ink-secondary">ATTACHED FLAGSMITH CONTEXT</p>
-              <p>identity: {context.identity ?? 'Anonymous'}</p>
-              <p>theme_accent: {context.accent}</p>
-              <p>pricing_experiment: {context.pricingVariant}</p>
-              <p>onboarding_flow: {context.onboardingVariant}</p>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setEntries([buildDiagnosticResponse(PRESET_PROMPTS[0], context, 1)])
+              }
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Reset Session</span>
+            </Button>
           </div>
 
-          {/* Right transcript & command input */}
-          <div className="flex flex-col justify-between gap-6 p-6 lg:col-span-7">
-            <div className="max-h-[420px] space-y-6 overflow-y-auto pr-2">
-              {entries.map((entry) => (
-                <article
-                  key={entry.id}
-                  className="space-y-4 border-l-2 border-accent pl-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-mono text-xs font-semibold text-ink-primary">
-                      &gt; {entry.prompt}
-                    </p>
-                    <span className="font-mono text-micro text-ink-muted tabular-nums">
-                      {entry.traceId} · {entry.timestamp}
-                    </span>
-                  </div>
+          <Separator />
 
-                  <p className="font-sans text-sm leading-relaxed text-ink-secondary">
-                    {entry.summary}
-                  </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12">
+            {/* Left runbook rail */}
+            <div className="space-y-6 border-b border-rule-subtle p-6 lg:col-span-5 lg:border-b-0 lg:border-r">
+              <div className="space-y-2">
+                <p className="font-mono text-label uppercase text-ink-muted">
+                  PRE-LOADED DIAGNOSTIC RUNBOOKS
+                </p>
+                <p className="font-sans text-xs text-ink-secondary">
+                  Select a deterministic telemetry query or inspect live Flagsmith flag
+                  context directly below.
+                </p>
+              </div>
 
-                  {entry.codeBlock && (
-                    <div className="border border-rule-subtle bg-canvas">
-                      <div className="flex items-center justify-between border-b border-rule-subtle px-4 py-2">
-                        <span className="font-mono text-micro uppercase text-ink-muted">
-                          TELEMETRY OUTPUT
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void handleCopyCode(entry.id, entry.codeBlock!)}
-                        >
-                          {copiedId === entry.id ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-                              <span>Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-ink-primary tabular-nums">
-                        {entry.codeBlock}
-                      </pre>
-                    </div>
-                  )}
-                </article>
-              ))}
+              <div className="divide-y divide-rule-subtle border-y border-rule-subtle">
+                {PRESET_PROMPTS.map((preset) => (
+                  <LedgerRow key={preset} hoverTone="elevated">
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      className="h-auto w-full justify-start whitespace-normal rounded-none px-4 py-4 text-left font-mono text-xs text-ink-primary hover:bg-transparent"
+                      onClick={() => runPrompt(preset)}
+                    >
+                      <Terminal
+                        className="h-4 w-4 shrink-0 text-accent"
+                        aria-hidden="true"
+                      />
+                      <span>{preset}</span>
+                    </Button>
+                  </LedgerRow>
+                ))}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2 font-mono text-micro text-ink-muted tabular-nums">
+                <p className="uppercase text-ink-secondary">ATTACHED FLAGSMITH CONTEXT</p>
+                <p>identity: {context.identity ?? 'Anonymous'}</p>
+                <p>theme_accent: {context.accent}</p>
+                <p>pricing_experiment: {context.pricingVariant}</p>
+                <p>onboarding_flow: {context.onboardingVariant}</p>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Query cluster telemetry, flag drift, or canary manifests..."
-                aria-label="Diagnostic copilot query"
-              />
-              <Button type="submit" variant="primary" size="md">
-                <span>Run Query</span>
-                <CornerDownLeft className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </form>
+            {/* Right transcript & command input */}
+            <div className="flex flex-col justify-between gap-6 p-6 lg:col-span-7">
+              <div
+                ref={transcriptRef}
+                className="max-h-[420px] space-y-6 overflow-y-auto pr-2"
+              >
+                <AnimatePresence initial={false}>
+                  {entries.map((entry) => (
+                    <motion.article
+                      key={entry.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.3, ease: EASE_TECHNICAL }}
+                      className="space-y-4 border-l-2 border-accent pl-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-mono text-xs font-semibold text-ink-primary">
+                          &gt; {entry.prompt}
+                        </p>
+                        <span className="font-mono text-micro text-ink-muted tabular-nums">
+                          {entry.traceId} · {entry.timestamp}
+                        </span>
+                      </div>
+
+                      <p className="font-sans text-sm leading-relaxed text-ink-secondary">
+                        {entry.summary}
+                      </p>
+
+                      {entry.codeBlock && (
+                        <div className="border border-rule-subtle bg-canvas">
+                          <div className="flex items-center justify-between border-b border-rule-subtle px-4 py-2">
+                            <span className="font-mono text-micro uppercase text-ink-muted">
+                              TELEMETRY OUTPUT
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                void handleCopyCode(entry.id, entry.codeBlock!)
+                              }
+                            >
+                              {copiedId === entry.id ? (
+                                <>
+                                  <Check
+                                    className="h-3.5 w-3.5 text-accent"
+                                    aria-hidden="true"
+                                  />
+                                  <span>Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                          <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-ink-primary tabular-nums">
+                            {entry.codeBlock}
+                          </pre>
+                        </div>
+                      )}
+                    </motion.article>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Query cluster telemetry, flag drift, or canary manifests..."
+                  aria-label="Diagnostic copilot query"
+                />
+                <Button type="submit" variant="primary" size="md">
+                  <span>Run Query</span>
+                  <CornerDownLeft className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 };

@@ -1,10 +1,18 @@
 import * as React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Play, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AnimatedNumber,
+  EASE_TECHNICAL,
+  LedgerRow,
+  Reveal,
+  SPRING_CALM,
+  TactileRowEdge,
+} from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 export type OnboardingVariant = 'wizard' | 'direct_dashboard' | 'sample_data';
@@ -13,6 +21,12 @@ export interface OnboardingSectionProps {
   variant: string;
   isOverridden?: boolean;
 }
+
+const ONBOARDING_VARIANTS: ReadonlyArray<{ id: OnboardingVariant; label: string }> = [
+  { id: 'wizard', label: 'wizard' },
+  { id: 'direct_dashboard', label: 'direct_dashboard' },
+  { id: 'sample_data', label: 'sample_data' },
+];
 
 interface WizardStep {
   num: string;
@@ -116,10 +130,10 @@ const INITIAL_CLUSTER_LOGS: ReadonlyArray<ClusterLogEntry> = [
 interface SyntheticTraceState {
   burstRun: number;
   reqPerMin: number;
-  p50: string;
-  p95: string;
-  p99: string;
-  errorRate: string;
+  p50: number;
+  p95: number;
+  p99: number;
+  errorRatePct: number;
   popBreakdown: Array<{
     pop: string;
     requests: string;
@@ -133,10 +147,10 @@ interface SyntheticTraceState {
 const BASE_SYNTHETIC_TRACE: SyntheticTraceState = {
   burstRun: 1,
   reqPerMin: 12400,
-  p50: '6.1',
-  p95: '11.4',
-  p99: '14.2',
-  errorRate: '0.016%',
+  p50: 6.1,
+  p95: 11.4,
+  p99: 14.2,
+  errorRatePct: 0.016,
   popBreakdown: [
     {
       pop: 'iad-edge-04',
@@ -250,9 +264,9 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
       const nextRun = prev.burstRun + 1;
       const bump = (nextRun % 3) * 1850;
       const reqPerMin = 12400 + bump;
-      const p50 = (6.1 + (nextRun % 3) * 0.2).toFixed(1);
-      const p95 = (11.4 + (nextRun % 3) * 0.4).toFixed(1);
-      const p99 = (14.2 + (nextRun % 3) * 0.6).toFixed(1);
+      const p50 = Number((6.1 + (nextRun % 3) * 0.2).toFixed(1));
+      const p95 = Number((11.4 + (nextRun % 3) * 0.4).toFixed(1));
+      const p99 = Number((14.2 + (nextRun % 3) * 0.6).toFixed(1));
       return {
         ...prev,
         burstRun: nextRun,
@@ -260,7 +274,7 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
         p50,
         p95,
         p99,
-        errorRate: nextRun % 2 === 0 ? '0.012%' : '0.016%',
+        errorRatePct: nextRun % 2 === 0 ? 0.012 : 0.016,
       };
     });
   };
@@ -276,25 +290,65 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
 
   return (
     <section aria-labelledby="onboarding-heading" className="py-16">
-      <div className="space-y-8">
+      <Reveal className="space-y-8">
         {/* Section header */}
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-label uppercase text-ink-muted">
-                ACTIVATION PIPELINE
-              </span>
-              <Badge variant="accent">onboarding_flow = {activeVariant}</Badge>
-              {isOverridden && <Badge variant="solid">OVERRIDDEN</Badge>}
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-label uppercase text-ink-muted">
+                  ACTIVATION PIPELINE
+                </span>
+                <Badge variant="accent">onboarding_flow = {activeVariant}</Badge>
+                {isOverridden && <Badge variant="solid">OVERRIDDEN</Badge>}
+              </div>
+
+              <h2
+                id="onboarding-heading"
+                className="font-display text-display tracking-[-0.035em]"
+              >
+                <span className="font-extralight text-ink-secondary">Edge</span>{' '}
+                <span className="font-extrabold text-ink-primary">
+                  Workspace Bootstrap
+                </span>
+              </h2>
             </div>
 
-            <h2
-              id="onboarding-heading"
-              className="font-display text-display tracking-[-0.035em]"
+            {/* Live Flagsmith variant indicator rail */}
+            <div
+              role="list"
+              aria-label="Active Flagsmith onboarding_flow variant"
+              className="inline-flex flex-wrap items-center gap-2 border border-rule-subtle bg-surface p-2"
             >
-              <span className="font-extralight text-ink-secondary">Edge</span>{' '}
-              <span className="font-extrabold text-ink-primary">Workspace Bootstrap</span>
-            </h2>
+              {ONBOARDING_VARIANTS.map((item) => {
+                const isCurrent = item.id === activeVariant;
+                return (
+                  <div
+                    key={item.id}
+                    role="listitem"
+                    aria-current={isCurrent ? 'true' : undefined}
+                    className="relative inline-flex h-8 items-center px-4 font-mono text-micro uppercase tabular-nums"
+                  >
+                    {isCurrent && (
+                      <motion.span
+                        layoutId="onboarding-variant-pill"
+                        transition={SPRING_CALM}
+                        aria-hidden="true"
+                        className="absolute inset-0 rounded-sm border border-accent-border bg-accent-tint"
+                      />
+                    )}
+                    <span
+                      className={cn(
+                        'relative z-10 transition-colors duration-150',
+                        isCurrent ? 'font-semibold text-accent' : 'text-ink-muted',
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <p className="max-w-md font-sans text-body text-ink-secondary">
@@ -303,266 +357,331 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
           </p>
         </div>
 
-        {/* Variant 1: wizard */}
-        {activeVariant === 'wizard' && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <span className="font-mono text-label uppercase text-ink-secondary tabular-nums">
-                  {completedCount} / {WIZARD_STEPS.length} STEPS VERIFIED
-                </span>
-                {completedCount === WIZARD_STEPS.length && (
-                  <Badge variant="solid">READY FOR TRAFFIC CUTOVER</Badge>
-                )}
-              </div>
-
-              <Button variant="ghost" size="sm" onClick={resetChecklist}>
-                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Reset Checklist</span>
-              </Button>
-            </div>
-
-            <div className="divide-y divide-rule-subtle border-y border-rule-subtle">
-              {WIZARD_STEPS.map((step) => {
-                const isDone = Boolean(completedSteps[step.id]);
-                return (
-                  <div
-                    key={step.id}
-                    className={cn(
-                      'grid grid-cols-1 items-center gap-4 py-6 transition-colors md:grid-cols-12',
-                      isDone ? 'bg-surface px-4' : 'px-4',
-                    )}
-                  >
-                    <div className="flex items-baseline gap-4 md:col-span-2">
-                      <span
-                        className={cn(
-                          'font-mono text-metric leading-none tabular-nums',
-                          isDone
-                            ? 'font-extrabold text-accent'
-                            : 'font-extralight text-ink-muted',
-                        )}
-                      >
-                        {step.num}
-                      </span>
-                      {isDone && (
-                        <Check className="h-4 w-4 text-accent" aria-hidden="true" />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeVariant}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: EASE_TECHNICAL }}
+          >
+            {/* Variant 1: wizard */}
+            {activeVariant === 'wizard' && (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-label uppercase text-ink-secondary tabular-nums">
+                      <AnimatedNumber value={completedCount} /> / {WIZARD_STEPS.length}{' '}
+                      STEPS VERIFIED
+                    </span>
+                    <AnimatePresence initial={false}>
+                      {completedCount === WIZARD_STEPS.length && (
+                        <motion.span
+                          key="ready-badge"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.22, ease: EASE_TECHNICAL }}
+                        >
+                          <Badge variant="solid">READY FOR TRAFFIC CUTOVER</Badge>
+                        </motion.span>
                       )}
-                    </div>
-
-                    <div className="space-y-2 md:col-span-7">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-sans text-body font-medium text-ink-primary">
-                          {step.title}
-                        </h3>
-                        <Badge variant={isDone ? 'accent' : 'neutral'}>
-                          {isDone ? 'VERIFIED' : 'PENDING'}
-                        </Badge>
-                      </div>
-                      <p className="font-mono text-micro text-ink-secondary tabular-nums">
-                        {step.target}
-                      </p>
-                      <p className="font-sans text-sm text-ink-secondary">
-                        {step.detail}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-start gap-4 md:col-span-3 md:justify-end">
-                      <label
-                        htmlFor={`wizard-step-${step.id}`}
-                        className="font-mono text-micro uppercase text-ink-muted"
-                      >
-                        {isDone ? 'Complete' : 'Mark verified'}
-                      </label>
-                      <Switch
-                        id={`wizard-step-${step.id}`}
-                        checked={isDone}
-                        onCheckedChange={(checked) => toggleStep(step.id, checked)}
-                        aria-label={`Toggle step ${step.num}: ${step.title}`}
-                      />
-                    </div>
+                    </AnimatePresence>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* Variant 2: direct_dashboard */}
-        {activeVariant === 'direct_dashboard' && (
-          <div className="border border-rule-subtle bg-surface p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
-              <div className="space-y-2">
-                <span className="font-mono text-label uppercase text-ink-primary">
-                  LIVE EDGE INGRESS LOG STREAM
-                </span>
-                <p className="font-mono text-micro text-ink-secondary tabular-nums">
-                  Direct operator view · real-time POP request telemetry · sha 8f3c91a
-                </p>
+                  <Button variant="ghost" size="sm" onClick={resetChecklist}>
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Reset Checklist</span>
+                  </Button>
+                </div>
+
+                <div className="divide-y divide-rule-subtle border-y border-rule-subtle">
+                  {WIZARD_STEPS.map((step) => {
+                    const isDone = Boolean(completedSteps[step.id]);
+                    return (
+                      <LedgerRow
+                        key={step.id}
+                        active={isDone}
+                        hoverTone="surface"
+                        className="grid grid-cols-1 items-center gap-4 px-4 py-6 md:grid-cols-12"
+                      >
+                        <div className="flex items-baseline gap-4 md:col-span-2">
+                          <span
+                            className={cn(
+                              'font-mono text-metric leading-none tabular-nums transition-colors duration-200',
+                              isDone
+                                ? 'font-extrabold text-accent'
+                                : 'font-extralight text-ink-muted',
+                            )}
+                          >
+                            {step.num}
+                          </span>
+                          {isDone && (
+                            <Check className="h-4 w-4 text-accent" aria-hidden="true" />
+                          )}
+                        </div>
+
+                        <div className="space-y-2 md:col-span-7">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-sans text-body font-medium text-ink-primary">
+                              {step.title}
+                            </h3>
+                            <Badge variant={isDone ? 'accent' : 'neutral'}>
+                              {isDone ? 'VERIFIED' : 'PENDING'}
+                            </Badge>
+                          </div>
+                          <p className="font-mono text-micro text-ink-secondary tabular-nums">
+                            {step.target}
+                          </p>
+                          <p className="font-sans text-sm text-ink-secondary">
+                            {step.detail}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-start gap-4 md:col-span-3 md:justify-end">
+                          <label
+                            htmlFor={`wizard-step-${step.id}`}
+                            className="font-mono text-micro uppercase text-ink-muted"
+                          >
+                            {isDone ? 'Complete' : 'Mark verified'}
+                          </label>
+                          <Switch
+                            id={`wizard-step-${step.id}`}
+                            checked={isDone}
+                            onCheckedChange={(checked) => toggleStep(step.id, checked)}
+                            aria-label={`Toggle step ${step.num}: ${step.title}`}
+                          />
+                        </div>
+                      </LedgerRow>
+                    );
+                  })}
+                </div>
               </div>
+            )}
 
-              <div className="flex items-center gap-2">
-                <Badge variant="accent">{visibleLogs.length} EVENTS</Badge>
-                <Button variant="outline" size="sm" onClick={handleTriggerProbe}>
-                  <Play className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Trigger Canary Probe</span>
-                </Button>
+            {/* Variant 2: direct_dashboard */}
+            {activeVariant === 'direct_dashboard' && (
+              <div className="border border-rule-subtle bg-surface p-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
+                  <div className="space-y-2">
+                    <span className="font-mono text-label uppercase text-ink-primary">
+                      LIVE EDGE INGRESS LOG STREAM
+                    </span>
+                    <p className="font-mono text-micro text-ink-secondary tabular-nums">
+                      Direct operator view · real-time POP request telemetry · sha 8f3c91a
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Badge variant="accent">
+                      <AnimatedNumber value={visibleLogs.length} /> EVENTS
+                    </Badge>
+                    <Button variant="outline" size="sm" onClick={handleTriggerProbe}>
+                      <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Trigger Canary Probe</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <Tabs value={selectedPop} onValueChange={setSelectedPop}>
+                  <TabsList className="w-full justify-start overflow-x-auto">
+                    <TabsTrigger value="all">All POPs</TabsTrigger>
+                    <TabsTrigger value="iad-edge-04">iad-edge-04</TabsTrigger>
+                    <TabsTrigger value="fra-edge-02">fra-edge-02</TabsTrigger>
+                    <TabsTrigger value="nrt-edge-01">nrt-edge-01</TabsTrigger>
+                    <TabsTrigger value="sjc-edge-07">sjc-edge-07</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value={selectedPop}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-left font-mono text-xs tabular-nums">
+                        <thead>
+                          <tr className="border-b border-rule-subtle text-micro uppercase text-ink-muted">
+                            <th className="py-2 pl-4 pr-4 font-normal">Timestamp</th>
+                            <th className="py-2 pr-4 font-normal">Cluster POP</th>
+                            <th className="py-2 pr-4 font-normal">Route</th>
+                            <th className="py-2 pr-4 font-normal">Status</th>
+                            <th className="py-2 pr-4 font-normal">P99</th>
+                            <th className="py-2 font-normal">Release</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rule-subtle">
+                          {visibleLogs.map((log) => (
+                            <motion.tr
+                              key={log.id}
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.24, ease: EASE_TECHNICAL }}
+                              className="group transition-colors duration-150 hover:bg-elevated"
+                            >
+                              <td className="relative whitespace-nowrap py-4 pl-4 pr-4 text-ink-muted">
+                                <TactileRowEdge />
+                                {log.timestamp}
+                              </td>
+                              <td className="whitespace-nowrap py-4 pr-4 text-ink-primary">
+                                {log.pop}
+                              </td>
+                              <td className="whitespace-nowrap py-4 pr-4 text-ink-secondary">
+                                <span className="text-accent">{log.method}</span>{' '}
+                                {log.route}
+                              </td>
+                              <td className="whitespace-nowrap py-4 pr-4">
+                                <Badge variant="accent">{log.status}</Badge>
+                              </td>
+                              <td className="whitespace-nowrap py-4 pr-4 text-ink-primary">
+                                {log.p99Ms}
+                              </td>
+                              <td className="whitespace-nowrap py-4 text-ink-muted">
+                                {log.sha}
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
-            </div>
+            )}
 
-            <Tabs value={selectedPop} onValueChange={setSelectedPop}>
-              <TabsList className="w-full justify-start overflow-x-auto">
-                <TabsTrigger value="all">All POPs</TabsTrigger>
-                <TabsTrigger value="iad-edge-04">iad-edge-04</TabsTrigger>
-                <TabsTrigger value="fra-edge-02">fra-edge-02</TabsTrigger>
-                <TabsTrigger value="nrt-edge-01">nrt-edge-01</TabsTrigger>
-                <TabsTrigger value="sjc-edge-07">sjc-edge-07</TabsTrigger>
-              </TabsList>
+            {/* Variant 3: sample_data */}
+            {activeVariant === 'sample_data' && (
+              <div className="space-y-8">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-y border-rule-subtle py-4">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <Badge variant="solid">
+                      SYNTHETIC TRACE #<AnimatedNumber value={syntheticTrace.burstRun} />
+                    </Badge>
+                    <span className="font-mono text-sm text-ink-primary tabular-nums">
+                      meridian-checkout-canary
+                    </span>
+                    <span className="font-mono text-micro uppercase text-ink-secondary tabular-nums">
+                      <AnimatedNumber value={syntheticTrace.reqPerMin} /> synthetic
+                      req/min
+                    </span>
+                  </div>
 
-              <TabsContent value={selectedPop}>
-                <div className="overflow-x-auto">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleRunSyntheticBurst}
+                    >
+                      <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Run Synthetic Burst</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetSyntheticTrace}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Reset Trace</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Open 3x percentile strip */}
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+                  <div className="space-y-2">
+                    <p className="font-mono text-label uppercase text-ink-muted">
+                      P50 MEDIAN
+                    </p>
+                    <p className="font-mono text-metric leading-none tabular-nums">
+                      <AnimatedNumber
+                        value={syntheticTrace.p50}
+                        decimals={1}
+                        className="font-extrabold text-ink-primary"
+                      />{' '}
+                      <span className="text-base font-extralight text-ink-secondary">
+                        ms
+                      </span>
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-label uppercase text-ink-muted">
+                      P95 TAIL
+                    </p>
+                    <p className="font-mono text-metric leading-none tabular-nums">
+                      <AnimatedNumber
+                        value={syntheticTrace.p95}
+                        decimals={1}
+                        className="font-extrabold text-ink-primary"
+                      />{' '}
+                      <span className="text-base font-extralight text-ink-secondary">
+                        ms
+                      </span>
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-label uppercase text-ink-muted">
+                      P99 SLO BUDGET
+                    </p>
+                    <p className="font-mono text-metric leading-none tabular-nums">
+                      <AnimatedNumber
+                        value={syntheticTrace.p99}
+                        decimals={1}
+                        className="font-extrabold text-accent"
+                      />{' '}
+                      <span className="text-base font-extralight text-ink-secondary">
+                        ms
+                      </span>
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-mono text-label uppercase text-ink-muted">
+                      5XX RATE
+                    </p>
+                    <p className="font-mono text-metric leading-none tabular-nums">
+                      <AnimatedNumber
+                        value={syntheticTrace.errorRatePct}
+                        decimals={3}
+                        suffix="%"
+                        className="font-extrabold text-ink-primary"
+                      />
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-rule-subtle bg-surface">
                   <table className="w-full border-collapse text-left font-mono text-xs tabular-nums">
                     <thead>
                       <tr className="border-b border-rule-subtle text-micro uppercase text-ink-muted">
-                        <th className="py-2 pr-4 font-normal">Timestamp</th>
-                        <th className="py-2 pr-4 font-normal">Cluster POP</th>
-                        <th className="py-2 pr-4 font-normal">Route</th>
-                        <th className="py-2 pr-4 font-normal">Status</th>
-                        <th className="py-2 pr-4 font-normal">P99</th>
-                        <th className="py-2 font-normal">Release</th>
+                        <th className="px-4 py-4 font-normal">Edge POP</th>
+                        <th className="px-4 py-4 font-normal">Synthetic Volume</th>
+                        <th className="px-4 py-4 font-normal">P50</th>
+                        <th className="px-4 py-4 font-normal">P95</th>
+                        <th className="px-4 py-4 font-normal">P99</th>
+                        <th className="px-4 py-4 font-normal">State</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-rule-subtle">
-                      {visibleLogs.map((log) => (
+                      {syntheticTrace.popBreakdown.map((row) => (
                         <tr
-                          key={log.id}
-                          className="transition-colors hover:bg-elevated"
+                          key={row.pop}
+                          className="group transition-colors duration-150 hover:bg-elevated"
                         >
-                          <td className="whitespace-nowrap py-4 pr-4 text-ink-muted">
-                            {log.timestamp}
+                          <td className="relative px-4 py-4 text-ink-primary">
+                            <TactileRowEdge />
+                            {row.pop}
                           </td>
-                          <td className="whitespace-nowrap py-4 pr-4 text-ink-primary">
-                            {log.pop}
-                          </td>
-                          <td className="whitespace-nowrap py-4 pr-4 text-ink-secondary">
-                            <span className="text-accent">{log.method}</span> {log.route}
-                          </td>
-                          <td className="whitespace-nowrap py-4 pr-4">
-                            <Badge variant="accent">{log.status}</Badge>
-                          </td>
-                          <td className="whitespace-nowrap py-4 pr-4 text-ink-primary">
-                            {log.p99Ms}
-                          </td>
-                          <td className="whitespace-nowrap py-4 text-ink-muted">
-                            {log.sha}
+                          <td className="px-4 py-4 text-ink-secondary">{row.requests}</td>
+                          <td className="px-4 py-4 text-ink-secondary">{row.p50}</td>
+                          <td className="px-4 py-4 text-ink-secondary">{row.p95}</td>
+                          <td className="px-4 py-4 text-ink-primary">{row.p99}</td>
+                          <td className="px-4 py-4">
+                            <Badge variant="accent">{row.status}</Badge>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-
-        {/* Variant 3: sample_data */}
-        {activeVariant === 'sample_data' && (
-          <div className="space-y-8">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-y border-rule-subtle py-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <Badge variant="solid">SYNTHETIC TRACE #{syntheticTrace.burstRun}</Badge>
-                <span className="font-mono text-sm text-ink-primary tabular-nums">
-                  meridian-checkout-canary
-                </span>
-                <span className="font-mono text-micro uppercase text-ink-secondary tabular-nums">
-                  {syntheticTrace.reqPerMin.toLocaleString()} synthetic req/min
-                </span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="primary" size="sm" onClick={handleRunSyntheticBurst}>
-                  <Play className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Run Synthetic Burst</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleResetSyntheticTrace}>
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Reset Trace</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Open 3x percentile strip */}
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-              <div className="space-y-2">
-                <p className="font-mono text-label uppercase text-ink-muted">P50 MEDIAN</p>
-                <p className="font-mono text-metric leading-none tabular-nums">
-                  <span className="font-extrabold text-ink-primary">
-                    {syntheticTrace.p50}
-                  </span>{' '}
-                  <span className="text-base font-extralight text-ink-secondary">ms</span>
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-mono text-label uppercase text-ink-muted">P95 TAIL</p>
-                <p className="font-mono text-metric leading-none tabular-nums">
-                  <span className="font-extrabold text-ink-primary">
-                    {syntheticTrace.p95}
-                  </span>{' '}
-                  <span className="text-base font-extralight text-ink-secondary">ms</span>
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-mono text-label uppercase text-ink-muted">
-                  P99 SLO BUDGET
-                </p>
-                <p className="font-mono text-metric leading-none tabular-nums">
-                  <span className="font-extrabold text-accent">
-                    {syntheticTrace.p99}
-                  </span>{' '}
-                  <span className="text-base font-extralight text-ink-secondary">ms</span>
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="font-mono text-label uppercase text-ink-muted">5XX RATE</p>
-                <p className="font-mono text-metric leading-none tabular-nums">
-                  <span className="font-extrabold text-ink-primary">
-                    {syntheticTrace.errorRate}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto border border-rule-subtle bg-surface">
-              <table className="w-full border-collapse text-left font-mono text-xs tabular-nums">
-                <thead>
-                  <tr className="border-b border-rule-subtle text-micro uppercase text-ink-muted">
-                    <th className="px-4 py-4 font-normal">Edge POP</th>
-                    <th className="px-4 py-4 font-normal">Synthetic Volume</th>
-                    <th className="px-4 py-4 font-normal">P50</th>
-                    <th className="px-4 py-4 font-normal">P95</th>
-                    <th className="px-4 py-4 font-normal">P99</th>
-                    <th className="px-4 py-4 font-normal">State</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-rule-subtle">
-                  {syntheticTrace.popBreakdown.map((row) => (
-                    <tr key={row.pop} className="hover:bg-elevated">
-                      <td className="px-4 py-4 text-ink-primary">{row.pop}</td>
-                      <td className="px-4 py-4 text-ink-secondary">{row.requests}</td>
-                      <td className="px-4 py-4 text-ink-secondary">{row.p50}</td>
-                      <td className="px-4 py-4 text-ink-secondary">{row.p95}</td>
-                      <td className="px-4 py-4 text-ink-primary">{row.p99}</td>
-                      <td className="px-4 py-4">
-                        <Badge variant="accent">{row.status}</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </Reveal>
     </section>
   );
 };

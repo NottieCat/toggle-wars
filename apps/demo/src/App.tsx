@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { useFlags, useFlagsmith } from 'flagsmith/react';
 import {
   ToggleDock,
@@ -15,6 +16,7 @@ import { OnboardingSection } from '@/components/OnboardingSection';
 import { PricingSection } from '@/components/PricingSection';
 import { PromoBanner } from '@/components/PromoBanner';
 import { Separator } from '@/components/ui/separator';
+import { PRESENCE_TRANSITION } from '@/lib/motion';
 
 const DEMO_FLAG_KEYS = [
   'promo_banner',
@@ -150,83 +152,107 @@ export default function App() {
     import.meta.env.VITE_FLAGSMITH_PROD_KEY;
 
   return (
-    <div className="min-h-screen bg-canvas text-ink-primary">
-      <PromoBanner
-        enabled={promoEnabled}
-        isOverridden={overriddenKeys.has('promo_banner')}
-      />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen bg-canvas text-ink-primary">
+        <AnimatePresence initial={false}>
+          {promoEnabled && (
+            <motion.div
+              key="promo-banner-presence"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={PRESENCE_TRANSITION}
+              className="overflow-hidden"
+            >
+              <PromoBanner
+                enabled={promoEnabled}
+                isOverridden={overriddenKeys.has('promo_banner')}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <Header
-        adminProxyUrl={adminProxyUrl}
-        flagsmithDashboardUrl="http://localhost:8000"
-      />
+        <Header
+          adminProxyUrl={adminProxyUrl}
+          flagsmithDashboardUrl="http://localhost:8000"
+        />
 
-      <main className="mx-auto max-w-[1200px] px-6 pb-24 md:px-8">
-        <HeroTelemetry
-          identity={liveIdentity}
-          traits={liveTraits}
-          flags={{
-            promo_banner: promoEnabled,
-            ai_copilot_widget: aiCopilotEnabled,
-            pricing_experiment: pricingVariant,
-            onboarding_flow: onboardingVariant,
-            theme_accent: activeAccent,
+        <main className="mx-auto max-w-[1200px] px-6 pb-24 md:px-8">
+          <HeroTelemetry
+            identity={liveIdentity}
+            traits={liveTraits}
+            flags={{
+              promo_banner: promoEnabled,
+              ai_copilot_widget: aiCopilotEnabled,
+              pricing_experiment: pricingVariant,
+              onboarding_flow: onboardingVariant,
+              theme_accent: activeAccent,
+            }}
+            overriddenKeys={overriddenKeys}
+          />
+
+          <Separator />
+
+          <OnboardingSection
+            variant={onboardingVariant}
+            isOverridden={overriddenKeys.has('onboarding_flow')}
+          />
+
+          <Separator />
+
+          <PricingSection
+            variant={pricingVariant}
+            isOverridden={overriddenKeys.has('pricing_experiment')}
+          />
+
+          <AnimatePresence initial={false}>
+            {aiCopilotEnabled && (
+              <motion.div
+                key="ai-copilot-presence"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={PRESENCE_TRANSITION}
+                className="overflow-hidden"
+              >
+                <Separator />
+                <AiCopilotPanel
+                  enabled={aiCopilotEnabled}
+                  isOverridden={overriddenKeys.has('ai_copilot_widget')}
+                  context={{
+                    identity: liveIdentity,
+                    accent: activeAccent,
+                    pricingVariant,
+                    onboardingVariant,
+                    promoEnabled,
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <footer className="mt-8 border-t border-rule-subtle pt-8">
+            <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-micro uppercase text-ink-muted tabular-nums">
+              <span>Meridian Cloud · Cluster iad-edge-04 · Release v4.18.2-rc3</span>
+              <span>Press ⌘⇧F to open ToggleDock · Self-hosted Flagsmith OSS</span>
+            </div>
+          </footer>
+        </main>
+
+        <ToggleDock
+          flagsmith={flagsmith}
+          adminProxyUrl={adminProxyUrl}
+          projectId={import.meta.env.VITE_FLAGSMITH_PROJECT_ID}
+          devEnvKey={devEnvKey}
+          devEnvId={import.meta.env.VITE_FLAGSMITH_DEV_ENV_ID}
+          prodEnvKey={prodEnvKey}
+          prodEnvId={import.meta.env.VITE_FLAGSMITH_PROD_ENV_ID}
+          environmentLabel="Development"
+          valuePresets={{
+            theme_accent: ['emerald', 'amber', 'indigo'],
           }}
-          overriddenKeys={overriddenKeys}
         />
-
-        <Separator />
-
-        <OnboardingSection
-          variant={onboardingVariant}
-          isOverridden={overriddenKeys.has('onboarding_flow')}
-        />
-
-        <Separator />
-
-        <PricingSection
-          variant={pricingVariant}
-          isOverridden={overriddenKeys.has('pricing_experiment')}
-        />
-
-        {aiCopilotEnabled && (
-          <>
-            <Separator />
-            <AiCopilotPanel
-              enabled={aiCopilotEnabled}
-              isOverridden={overriddenKeys.has('ai_copilot_widget')}
-              context={{
-                identity: liveIdentity,
-                accent: activeAccent,
-                pricingVariant,
-                onboardingVariant,
-                promoEnabled,
-              }}
-            />
-          </>
-        )}
-
-        <footer className="mt-8 border-t border-rule-subtle pt-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-micro uppercase text-ink-muted tabular-nums">
-            <span>Meridian Cloud · Cluster iad-edge-04 · Release v4.18.2-rc3</span>
-            <span>Press ⌘⇧F to open ToggleDock · Self-hosted Flagsmith OSS</span>
-          </div>
-        </footer>
-      </main>
-
-      <ToggleDock
-        flagsmith={flagsmith}
-        adminProxyUrl={adminProxyUrl}
-        projectId={import.meta.env.VITE_FLAGSMITH_PROJECT_ID}
-        devEnvKey={devEnvKey}
-        devEnvId={import.meta.env.VITE_FLAGSMITH_DEV_ENV_ID}
-        prodEnvKey={prodEnvKey}
-        prodEnvId={import.meta.env.VITE_FLAGSMITH_PROD_ENV_ID}
-        environmentLabel="Development"
-        valuePresets={{
-          theme_accent: ['emerald', 'amber', 'indigo'],
-        }}
-      />
-    </div>
+      </div>
+    </MotionConfig>
   );
 }
