@@ -1,0 +1,91 @@
+# ToggleDock self-hosted open-source Flagsmith stack.
+# Derived from the official Flagsmith Docker Compose configuration:
+# https://github.com/Flagsmith/flagsmith/blob/main/docker-compose.yml
+#
+# Usage:
+#   npm run flagsmith:up     # Start Postgres, run migrations, start Flagsmith on http://localhost:8000
+#   npm run flagsmith:wait   # Wait until Flagsmith health and API endpoints respond
+#   npm run flagsmith:down   # Stop containers (preserves pgdata volume)
+#   npm run flagsmith:reset  # Stop containers and remove pgdata volume
+
+name: toggledock
+
+x-flagsmith-env: &flagsmith-env
+  # Database connection (Postgres service below)
+  DATABASE_URL: postgresql://postgres:password@postgres:5432/flagsmith
+  USE_POSTGRES_FOR_ANALYTICS: 'true'
+
+  # Local self-hosted runtime configuration
+  ENVIRONMENT: production
+  DJANGO_ALLOWED_HOSTS: '*'
+  FLAGSMITH_DOMAIN: localhost:8000
+  DJANGO_SECRET_KEY: toggledock-local-dev-secret-change-in-prod
+  WAREHOUSE_CREDENTIALS_SECRET: toggledock-local-dev-secret-change-in-prod
+
+  # Enable local open-source signup and API bootstrapping without invites or email activation
+  ALLOW_REGISTRATION_WITHOUT_INVITE: 'true'
+  PREVENT_SIGNUP: 'false'
+  ENABLE_EMAIL_ACTIVATION: 'false'
+
+  # Run background tasks in a separate thread inside the Flagsmith process
+  # (avoids running a second task-processor container and extra port locally)
+  TASK_RUN_METHOD: SEPARATE_THREAD
+
+  # Keep local dev isolated from Flagsmith SaaS telemetry
+  ENABLE_TELEMETRY: 'false'
+
+volumes:
+  pgdata:
+
+services:
+  postgres:
+    image: postgres:15.5-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: flagsmith
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -d flagsmith -U postgres']
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 10s
+
+  migrate-db:
+    image: docker.flagsmith.com/flagsmith/flagsmith:latest
+    command:
+      - migrate
+    environment:
+      <<: *flagsmith-env
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  flagsmith:
+    image: docker.flagsmith.com/flagsmith/flagsmith:latest
+    restart: unless-stopped
+    command:
+      - serve
+    environment:
+      <<: *flagsmith-env
+    ports:
+      - '8000:8000'
+    depends_on:
+      migrate-db:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          'import urllib.request; req = urllib.request.Request("http://127.0.0.1:8000/health", headers={"Accept": "application/json"}); resp = urllib.request.urlopen(req, timeout=8); assert resp.status == 200',
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s

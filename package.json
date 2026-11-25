@@ -1,0 +1,25 @@
+{
+  "name": "toggledock-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "flagsmith:up": "docker compose -f docker/docker-compose.yml up -d",
+    "flagsmith:down": "docker compose -f docker/docker-compose.yml down",
+    "flagsmith:reset": "docker compose -f docker/docker-compose.yml down -v",
+    "flagsmith:logs": "docker compose -f docker/docker-compose.yml logs -f",
+    "flagsmith:wait": "node scripts/wait-for-flagsmith.mjs",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "setup": "npm run flagsmith:up && npm run flagsmith:wait && npm run bootstrap",
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "down": "npm run flagsmith:down"
+  }
+}
