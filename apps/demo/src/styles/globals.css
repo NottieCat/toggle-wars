@@ -13,12 +13,17 @@
   --rule-subtle: #20252D;
   --rule-strong: #2E3540;
 
-  /* Single Accent (default: Signal Emerald — flat solid only) */
+  /* Single Accent (default: Signal Emerald — flat solid + calibrated architectural lighting <= 8%) */
   --accent: #10B981;
   --accent-hover: #059669;
   --accent-ink: #041A12;
   --accent-tint: rgba(16, 185, 129, 0.12);
   --accent-border: rgba(16, 185, 129, 0.36);
+  --accent-ambient: rgba(16, 185, 129, 0.065);
+  --accent-spotlight: rgba(16, 185, 129, 0.05);
+  --accent-sheen: rgba(16, 185, 129, 0.055);
+  --accent-beam: rgba(16, 185, 129, 0.35);
+  --accent-beam-soft: rgba(16, 185, 129, 0.16);
 
   /* Fault / destructive semantic token (reserved strictly for errors) */
   --status-danger: #E5484D;
@@ -39,13 +44,18 @@
   --space-12: 96px;
 }
 
-/* Flagsmith theme_accent flat-solid accent swaps (ZERO gradients) */
+/* Flagsmith theme_accent swaps (monochrome single-accent + <= 8% architectural washes) */
 [data-accent="emerald"] {
   --accent: #10B981;
   --accent-hover: #059669;
   --accent-ink: #041A12;
   --accent-tint: rgba(16, 185, 129, 0.12);
   --accent-border: rgba(16, 185, 129, 0.36);
+  --accent-ambient: rgba(16, 185, 129, 0.065);
+  --accent-spotlight: rgba(16, 185, 129, 0.05);
+  --accent-sheen: rgba(16, 185, 129, 0.055);
+  --accent-beam: rgba(16, 185, 129, 0.35);
+  --accent-beam-soft: rgba(16, 185, 129, 0.16);
 }
 
 [data-accent="amber"] {
@@ -54,6 +64,11 @@
   --accent-ink: #1C1102;
   --accent-tint: rgba(245, 158, 11, 0.12);
   --accent-border: rgba(245, 158, 11, 0.36);
+  --accent-ambient: rgba(245, 158, 11, 0.065);
+  --accent-spotlight: rgba(245, 158, 11, 0.05);
+  --accent-sheen: rgba(245, 158, 11, 0.055);
+  --accent-beam: rgba(245, 158, 11, 0.35);
+  --accent-beam-soft: rgba(245, 158, 11, 0.16);
 }
 
 [data-accent="indigo"] {
@@ -62,6 +77,11 @@
   --accent-ink: #070E29;
   --accent-tint: rgba(91, 124, 250, 0.14);
   --accent-border: rgba(91, 124, 250, 0.38);
+  --accent-ambient: rgba(91, 124, 250, 0.07);
+  --accent-spotlight: rgba(91, 124, 250, 0.055);
+  --accent-sheen: rgba(91, 124, 250, 0.06);
+  --accent-beam: rgba(91, 124, 250, 0.38);
+  --accent-beam-soft: rgba(91, 124, 250, 0.17);
 }
 
 @layer base {
@@ -93,5 +113,156 @@
   *:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Overhead monochrome radial wash anchored behind the hero & right-rail */
+  .ambient-hero-wash {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 640px;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 62% 56% at 72% 18%,
+      var(--accent-ambient) 0%,
+      transparent 68%
+    );
+  }
+
+  /* Precision GPU-composited pointer spotlight wash */
+  .ambient-spotlight {
+    pointer-events: none;
+    background: radial-gradient(
+      circle,
+      var(--accent-spotlight) 0%,
+      transparent 68%
+    );
+    will-change: transform, opacity;
+  }
+
+  /* Crisp 1px architectural specular hairline beams */
+  .specular-beam {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-beam) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .specular-beam-soft {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-beam-soft) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Pointer-tracked localized radial surface sheen + top micro hairline */
+  .ledger-row-sheen {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      280px circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+      var(--accent-sheen) 0%,
+      transparent 72%
+    );
+    transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ledger-row-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    pointer-events: none;
+    background: radial-gradient(
+      180px circle at var(--pointer-x, 50%) 0px,
+      var(--accent-beam) 0%,
+      transparent 100%
+    );
+  }
+
+  .ledger-row-surface:hover > .ledger-row-sheen {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+    .ledger-row-sheen {
+      display: none;
+    }
+  }
+
+  /* Tactile hairline border brightening + top specular reveal on controls */
+  .control-specular {
+    position: relative;
+    overflow: hidden;
+    transition:
+      border-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .control-specular::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 8%,
+      var(--accent-beam) 50%,
+      transparent 92%
+    );
+    transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .control-specular:hover::after,
+  .control-specular:focus-visible::after {
+    opacity: 1;
+  }
+
+  .control-specular-primary::after {
+    background: linear-gradient(
+      90deg,
+      transparent 12%,
+      var(--ink-primary) 50%,
+      transparent 88%
+    );
+  }
+
+  .control-specular-primary:hover::after,
+  .control-specular-primary:focus-visible::after {
+    opacity: 0.45;
+  }
+
+  .control-specular-soft::after {
+    background: linear-gradient(
+      90deg,
+      transparent 10%,
+      var(--accent-beam-soft) 50%,
+      transparent 90%
+    );
+  }
+
+  .control-specular-soft:hover {
+    border-color: var(--accent-beam-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .control-specular,
+    .control-specular::after {
+      transition-duration: 1ms;
+    }
   }
 }

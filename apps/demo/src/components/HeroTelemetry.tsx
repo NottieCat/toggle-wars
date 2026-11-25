@@ -220,8 +220,12 @@ export const HeroTelemetry: React.FC<HeroTelemetryProps> = ({
           <aside
             ref={railRef}
             aria-label="Live Flagsmith state readout"
-            className="border border-rule-subtle bg-surface"
+            className="group/rail relative border border-rule-subtle bg-surface transition-colors duration-200 hover:border-rule-strong"
           >
+            <span
+              aria-hidden="true"
+              className="specular-beam absolute inset-x-0 -top-px z-10 opacity-75 transition-opacity duration-200 group-hover/rail:opacity-100"
+            />
             <EdgeMeshCanvas
               activeAccent={flags.theme_accent}
               parallaxContainerRef={railRef}

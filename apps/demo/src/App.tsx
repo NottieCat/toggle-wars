@@ -10,6 +10,7 @@ import {
   type TraitValue,
 } from 'toggledock';
 import { AiCopilotPanel } from '@/components/AiCopilotPanel';
+import { AmbientCursor } from '@/components/AmbientCursor';
 import { Header } from '@/components/Header';
 import { HeroTelemetry } from '@/components/HeroTelemetry';
 import { OnboardingSection } from '@/components/OnboardingSection';
@@ -153,7 +154,9 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-canvas text-ink-primary">
+      <div className="relative min-h-screen bg-canvas text-ink-primary">
+        <AmbientCursor />
+
         <AnimatePresence initial={false}>
           {promoEnabled && (
             <motion.div
@@ -162,7 +165,7 @@ export default function App() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={PRESENCE_TRANSITION}
-              className="overflow-hidden"
+              className="relative z-10 overflow-hidden"
             >
               <PromoBanner
                 enabled={promoEnabled}
@@ -172,12 +175,16 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <Header
-          adminProxyUrl={adminProxyUrl}
-          flagsmithDashboardUrl="http://localhost:8000"
-        />
+        <div className="relative z-10">
+          <Header
+            adminProxyUrl={adminProxyUrl}
+            flagsmithDashboardUrl="http://localhost:8000"
+          />
+        </div>
 
-        <main className="mx-auto max-w-[1200px] px-6 pb-24 md:px-8">
+        <div className="relative overflow-x-clip">
+          <div aria-hidden="true" className="ambient-hero-wash z-0" />
+          <main className="relative z-10 mx-auto max-w-[1200px] px-6 pb-24 md:px-8">
           <HeroTelemetry
             identity={liveIdentity}
             traits={liveTraits}
@@ -237,7 +244,8 @@ export default function App() {
               <span>Press ⌘⇧F to open ToggleDock · Self-hosted Flagsmith OSS</span>
             </div>
           </footer>
-        </main>
+          </main>
+        </div>
 
         <ToggleDock
           flagsmith={flagsmith}

@@ -171,7 +171,11 @@ export const AiCopilotPanel: React.FC<AiCopilotPanelProps> = ({
   return (
     <section aria-labelledby="copilot-heading" className="py-16">
       <Reveal>
-        <div className="border border-rule-subtle bg-surface">
+        <div className="relative border border-rule-subtle bg-surface">
+          <span
+            aria-hidden="true"
+            className="specular-beam absolute inset-x-0 -top-px z-10"
+          />
           {/* Panel header */}
           <div className="flex flex-wrap items-center justify-between gap-4 p-6">
             <div className="space-y-2">

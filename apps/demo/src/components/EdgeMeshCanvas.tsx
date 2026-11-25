@@ -583,7 +583,10 @@ export const EdgeMeshCanvas: React.FC<EdgeMeshCanvasProps> = ({
   }, [parallaxContainerRef]);
 
   return (
-    <div className="border-b border-rule-subtle">
+    <div
+      data-interactive="true"
+      className="group/mesh relative border-b border-rule-subtle transition-colors duration-200 hover:border-rule-strong"
+    >
       <div className="flex items-center justify-between gap-2 px-6 pt-4 pb-2">
         <span className="font-mono text-micro uppercase text-ink-muted tabular-nums">
           MESH TOPOLOGY · 18 POPS
@@ -596,7 +599,11 @@ export const EdgeMeshCanvas: React.FC<EdgeMeshCanvasProps> = ({
         </div>
       </div>
 
-      <div className="px-4">
+      <div className="relative px-4">
+        <span
+          aria-hidden="true"
+          className="specular-beam absolute inset-x-4 top-0 opacity-25 transition-opacity duration-200 group-hover/mesh:opacity-100"
+        />
         <div ref={wrapperRef} className="relative h-48 w-full overflow-hidden">
           <canvas
             ref={canvasRef}

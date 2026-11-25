@@ -13,11 +13,12 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-accent text-accent-ink font-extrabold hover:bg-accent-hover',
+        primary:
+          'control-specular control-specular-primary bg-accent text-accent-ink font-extrabold hover:bg-accent-hover',
         secondary:
-          'bg-elevated text-ink-primary font-medium border border-rule-subtle hover:border-rule-strong',
+          'control-specular bg-elevated text-ink-primary font-medium border border-rule-subtle hover:border-accent-border',
         outline:
-          'bg-transparent text-accent font-medium border border-accent-border hover:bg-accent-tint',
+          'control-specular bg-transparent text-accent font-medium border border-accent-border hover:border-accent hover:bg-accent-tint',
         ghost:
           'bg-transparent text-ink-secondary font-medium hover:bg-surface hover:text-ink-primary',
         danger:

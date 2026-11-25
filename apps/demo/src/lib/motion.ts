@@ -166,80 +166,65 @@ export const LedgerRow: React.FC<LedgerRowProps> = ({
   ...rest
 }) => {
   const prefersReduced = useReducedMotion();
-  const [hovered, setHovered] = React.useState(false);
-  const cursorX = useMotionValue(0);
-  const smoothX = useSpring(cursorX, {
-    stiffness: 420,
-    damping: 40,
-    mass: 0.65,
-  });
+  const rowRef = React.useRef<HTMLDivElement>(null);
+
+  const syncPointerVars = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (prefersReduced) {
+      return;
+    }
+    const node = rowRef.current ?? event.currentTarget;
+    const rect = node.getBoundingClientRect();
+    node.style.setProperty('--pointer-x', `${event.clientX - rect.left}px`);
+    node.style.setProperty('--pointer-y', `${event.clientY - rect.top}px`);
+  };
 
   const handlePointerEnter = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!prefersReduced) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      cursorX.jump(event.clientX - rect.left - 48);
-    }
-    setHovered(true);
+    syncPointerVars(event);
     onPointerEnter?.(event);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!prefersReduced) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      cursorX.set(event.clientX - rect.left - 48);
-    }
+    syncPointerVars(event);
     onPointerMove?.(event);
   };
 
   const handlePointerLeave = (event: React.PointerEvent<HTMLDivElement>) => {
-    setHovered(false);
     onPointerLeave?.(event);
   };
 
-  const isHighlighted = active || hovered;
-
-  const leftEdge = React.createElement(motion.span, {
+  const sheenLayer = React.createElement('span', {
     'aria-hidden': 'true',
-    initial: false,
-    animate: {
-      scaleY: isHighlighted ? 1 : 0,
-      opacity: isHighlighted ? 1 : 0,
-    },
-    transition: {
-      duration: prefersReduced ? 0.01 : 0.2,
-      ease: EASE_TECHNICAL,
-    },
-    className:
-      'pointer-events-none absolute inset-y-0 left-0 w-[2px] origin-center bg-accent',
+    className: 'ledger-row-sheen',
   });
 
-  const topCursor = !prefersReduced
-    ? React.createElement(motion.span, {
-        'aria-hidden': 'true',
-        style: { x: smoothX },
-        initial: false,
-        animate: { opacity: hovered ? 1 : 0 },
-        transition: { duration: 0.18, ease: EASE_TECHNICAL },
-        className: 'pointer-events-none absolute left-0 top-0 h-px w-24 bg-accent',
-      })
-    : null;
+  const leftEdge = React.createElement('span', {
+    'aria-hidden': 'true',
+    className: cn(
+      'pointer-events-none absolute inset-y-0 left-0 w-[2px] origin-center bg-accent transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+      active
+        ? 'scale-y-100 opacity-100'
+        : 'scale-y-0 opacity-0 group-hover/row:scale-y-100 group-hover/row:opacity-100',
+    ),
+  });
 
   return React.createElement(
     'div',
     {
       ...rest,
+      ref: rowRef,
+      'data-ledger-row': 'true',
       onPointerEnter: handlePointerEnter,
       onPointerMove: handlePointerMove,
       onPointerLeave: handlePointerLeave,
       className: cn(
-        'relative overflow-hidden transition-colors duration-150',
+        'ledger-row-surface group/row relative overflow-hidden transition-colors duration-200',
         active && 'bg-surface',
-        hovered && (hoverTone === 'elevated' ? 'bg-elevated' : 'bg-surface'),
+        hoverTone === 'elevated' ? 'hover:bg-elevated' : 'hover:bg-surface',
         className,
       ),
     },
+    sheenLayer,
     leftEdge,
-    topCursor,
     children,
   );
 };

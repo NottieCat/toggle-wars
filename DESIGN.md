@@ -97,7 +97,7 @@ Example display pairing:
 | `--status-danger` | `#E5484D` | `text-danger` | Error states, failed requests, delete actions |
 | `--status-danger-tint` | `rgba(229, 72, 77, 0.12)` | `bg-danger-tint` | Error banner / destructive button surface |
 
-### 4.3 Flagsmith `theme_accent` Swap Table (Flat Solid ONLY)
+### 4.3 Flagsmith `theme_accent` Swap Table (Single Accent + Architectural Lighting Tokens)
 
 | `theme_accent` Value | `[data-accent]` | `--accent` | `--accent-hover` | `--accent-ink` | `--accent-tint` | `--accent-border` |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -105,11 +105,26 @@ Example display pairing:
 | `"amber"` (`beta_testers` override) | `amber` | `#F59E0B` | `#D97706` | `#1C1102` | `rgba(245, 158, 11, 0.12)` | `rgba(245, 158, 11, 0.36)` |
 | `"indigo"` (Prod default) | `indigo` | `#5B7CFA` | `#4366F5` | `#070E29` | `rgba(91, 124, 250, 0.14)` | `rgba(91, 124, 250, 0.38)` |
 
-### 4.4 Hard Color Bans
+Calibrated single-accent architectural lighting tokens (`apps/demo/src/styles/globals.css`; all radial washes/sheens strictly `<= 8%` alpha):
 
-- **ZERO purple or indigo gradients** on white — and ZERO decorative gradients anywhere (no `bg-gradient-to-*`, no radial glow blobs, no neon mesh backdrops).
+| `[data-accent]` | `--accent-ambient` (`<= 8%`) | `--accent-spotlight` (`<= 8%`) | `--accent-sheen` (`<= 8%`) | `--accent-beam` | `--accent-beam-soft` |
+| --- | --- | --- | --- | --- | --- |
+| `emerald` | `rgba(16, 185, 129, 0.065)` | `rgba(16, 185, 129, 0.05)` | `rgba(16, 185, 129, 0.055)` | `rgba(16, 185, 129, 0.35)` | `rgba(16, 185, 129, 0.16)` |
+| `amber` | `rgba(245, 158, 11, 0.065)` | `rgba(245, 158, 11, 0.05)` | `rgba(245, 158, 11, 0.055)` | `rgba(245, 158, 11, 0.35)` | `rgba(245, 158, 11, 0.16)` |
+| `indigo` | `rgba(91, 124, 250, 0.07)` | `rgba(91, 124, 250, 0.055)` | `rgba(91, 124, 250, 0.06)` | `rgba(91, 124, 250, 0.38)` | `rgba(91, 124, 250, 0.17)` |
+
+### 4.4 Architectural Lighting Scope & Hard Color Bans
+
+- **Permitted Narrow Exception — Monochrome Single-Accent Architectural Lighting on `#0A0C0E`:**
+  - Ultra-low-opacity radial light washes (`<= 8%` opacity: `--accent-ambient`, `--accent-spotlight`, `--accent-sheen`) derived purely from the single active `--accent` token and dissolving cleanly to `transparent` into `--bg-canvas` (`#0A0C0E`) with zero hard edges.
+  - Crisp `1px` specular hairline gradient beams (`transparent → var(--accent-beam) → transparent` and `--accent-beam-soft`) along instrument panel top edges and tactile hover control edges.
+  - All architectural lighting gradients and custom properties MUST live strictly in `apps/demo/src/styles/globals.css`.
+- **ZERO purple or indigo gradients on white**, ZERO multi-color neon rainbows, ZERO blurred glow blobs / glowing neon orbs, and ZERO decorative marketing `bg-gradient-to-*` backdrops.
 - **ZERO light-mode white cards with purple/indigo accents.**
-- **ZERO raw hex codes inside component JSX/TSX.** Always reference semantic Tailwind classes (`bg-canvas`, `text-accent`, `border-rule-subtle`) or CSS variables (`var(--td-accent)`).
+- **ZERO `0.1`-opacity drop-shadow soup** (`shadow-sm`, `shadow-md`, `shadow-lg`, `box-shadow`, `drop-shadow`, `shadowBlur`).
+- **ZERO 3-cards-in-a-row** layouts and **ZERO banned fonts** (Section 3.2).
+- **ZERO raw `#hex`, `rgb()`, `rgba()`, or `hsl()` literals inside component `.tsx` / `.ts` files.** Always reference semantic Tailwind classes (`bg-canvas`, `text-accent`, `border-rule-subtle`), CSS classes in `globals.css`, or CSS variables (`var(--td-accent)`).
+- **NEVER `cursor: none`.** Any pointer spotlight or telemetry reticle MUST keep the native OS cursor 100% visible, remain `pointer-events: none`, stay below `<ToggleDock />` (`z-index: 9999`), and gate strictly behind `(hover: hover) and (pointer: fine)` and `(prefers-reduced-motion: no-preference)`.
 
 ---
 
@@ -207,9 +222,11 @@ Every PR / phase verification check MUST reject any component containing:
 
 1. **NO three rounded cards in a row** (`grid-cols-3` of identical rounded bordered boxes with icon + title + paragraph). Use hairline-divided ledger rows, asymmetric 2-column splits (`7/5` or `8/4`), or specification comparison matrices instead.
 2. **NO centered-everything heroes** (`text-center mx-auto` headline + subtitle + dual pill CTAs).
-3. **NO `0.1`-opacity drop shadows on everything** (`shadow-sm`, `shadow-md`, `shadow-lg`, `rgba(0,0,0,0.1)`). Separation comes from surface contrast and `1px` hairline rules.
+3. **NO `0.1`-opacity drop shadows on everything** (`shadow-sm`, `shadow-md`, `shadow-lg`, `box-shadow`, `drop-shadow`, `shadowBlur`, `rgba(0,0,0,0.1)`). Separation comes from surface contrast and `1px` hairline rules.
 4. **NO gratuitous borders and boxes wrapping every element.** Text, KPI metrics, and headings sit cleanly in space.
-5. **NO purple or indigo gradients** (on white or dark), no glowing neon orbs, no decorative blur blobs.
+5. **NO purple/indigo gradients on white, multi-color neon rainbows, glowing neon orbs, or blurred glow blobs.** Only narrow **monochrome single-accent architectural lighting on `#0A0C0E`** (`<= 8%` radial light washes and `1px` specular hairline beams derived purely from the single active `--accent` token inside `apps/demo/src/styles/globals.css`) is permitted.
 6. **NO banned fonts** (`Inter`, `Roboto`, `Open Sans`, `Arial`, `system-ui`, `-apple-system`, `BlinkMacSystemFont`, `Segoe UI`).
 7. **NO timid `1.5×` type hierarchy** or mid-weight-only typography — use `200` vs `800` weight extremes and `3×` jumps (`12px → 36px`, `16px → 48px`).
 8. **NO placeholder text** (`Lorem ipsum`, `Feature 1`, `Coming soon`, `Acme Corp`).
+9. **NO raw `#hex`, `rgb()`, `rgba()`, or `hsl()` literals inside `.tsx` or `.ts` files.** All color and lighting tokens/gradients MUST live strictly inside `apps/demo/src/styles/globals.css` (or `.td-*` stylesheets in `packages/toggledock`).
+10. **NO `cursor: none`.** The native OS cursor MUST remain 100% visible at all times.

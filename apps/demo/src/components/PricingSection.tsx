@@ -169,8 +169,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             <div
               role="list"
               aria-label="Active Flagsmith pricing_experiment variant"
-              className="inline-flex flex-wrap items-center gap-2 border border-rule-subtle bg-surface p-2"
+              className="relative inline-flex flex-wrap items-center gap-2 border border-rule-subtle bg-surface p-2"
             >
+              <span
+                aria-hidden="true"
+                className="specular-beam absolute inset-x-0 -top-px"
+              />
               {PRICING_VARIANTS.map((item) => {
                 const isCurrent = item.id === activeVariant;
                 return (
@@ -178,7 +182,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                     key={item.id}
                     role="listitem"
                     aria-current={isCurrent ? 'true' : undefined}
-                    className="relative inline-flex h-8 items-center px-4 font-mono text-micro uppercase tabular-nums"
+                    data-interactive="true"
+                    className={cn(
+                      'control-specular group/pill relative inline-flex h-8 items-center rounded-sm border border-transparent px-4 font-mono text-micro uppercase tabular-nums',
+                      !isCurrent && 'control-specular-soft',
+                    )}
                   >
                     {isCurrent && (
                       <motion.span
@@ -191,7 +199,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                     <span
                       className={cn(
                         'relative z-10 transition-colors duration-150',
-                        isCurrent ? 'font-semibold text-accent' : 'text-ink-muted',
+                        isCurrent
+                          ? 'font-semibold text-accent'
+                          : 'text-ink-muted group-hover/pill:text-ink-primary',
                       )}
                     >
                       {item.label}
@@ -298,8 +308,13 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             {/* Control & Annual First: Crisp hairline specification ledger matrix */}
             {activeVariant !== 'usage_based' ? (
               <div className="space-y-4">
-                <div className="overflow-x-auto border-y border-rule-subtle">
-                  <table className="w-full min-w-[720px] border-collapse text-left">
+                <div className="relative">
+                  <span
+                    aria-hidden="true"
+                    className="specular-beam absolute inset-x-0 top-0 z-10"
+                  />
+                  <div className="overflow-x-auto border-y border-rule-subtle">
+                    <table className="w-full min-w-[720px] border-collapse text-left">
                     <thead>
                       <tr className="border-b border-rule-subtle align-top">
                         <th className="w-48 py-6 pl-4 pr-6 font-mono text-label uppercase text-ink-muted">
@@ -380,7 +395,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                     </thead>
 
                     <tbody className="divide-y divide-rule-subtle font-mono text-xs tabular-nums">
-                      <tr className="group transition-colors duration-150 hover:bg-surface">
+                      <tr
+                        data-ledger-row="true"
+                        className="group transition-colors duration-150 hover:bg-surface"
+                      >
                         <td className="relative py-4 pl-4 pr-6 text-micro uppercase text-ink-muted">
                           <TactileRowEdge />
                           REQUEST QUOTA
@@ -400,7 +418,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                         ))}
                       </tr>
 
-                      <tr className="group transition-colors duration-150 hover:bg-surface">
+                      <tr
+                        data-ledger-row="true"
+                        className="group transition-colors duration-150 hover:bg-surface"
+                      >
                         <td className="relative py-4 pl-4 pr-6 text-micro uppercase text-ink-muted">
                           <TactileRowEdge />
                           EDGE FOOTPRINT
@@ -420,7 +441,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                         ))}
                       </tr>
 
-                      <tr className="group transition-colors duration-150 hover:bg-surface">
+                      <tr
+                        data-ledger-row="true"
+                        className="group transition-colors duration-150 hover:bg-surface"
+                      >
                         <td className="relative py-4 pl-4 pr-6 text-micro uppercase text-ink-muted">
                           <TactileRowEdge />
                           AVAILABILITY SLA
@@ -440,7 +464,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                         ))}
                       </tr>
 
-                      <tr className="group transition-colors duration-150 hover:bg-surface">
+                      <tr
+                        data-ledger-row="true"
+                        className="group transition-colors duration-150 hover:bg-surface"
+                      >
                         <td className="relative py-4 pl-4 pr-6 text-micro uppercase text-ink-muted">
                           <TactileRowEdge />
                           NETWORK &amp; COMPLIANCE
@@ -460,7 +487,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                         ))}
                       </tr>
 
-                      <tr className="group transition-colors duration-150 hover:bg-surface">
+                      <tr
+                        data-ledger-row="true"
+                        className="group transition-colors duration-150 hover:bg-surface"
+                      >
                         <td className="relative py-6 pl-4 pr-6 text-micro uppercase text-ink-muted">
                           <TactileRowEdge />
                           ALLOCATION
@@ -493,6 +523,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <AnimatePresence initial={false}>
@@ -517,7 +548,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
               <div className="grid grid-cols-1 border-y border-rule-subtle lg:grid-cols-12">
                 {/* Left: Unit rate table + workload estimators */}
                 <div className="space-y-8 py-8 lg:col-span-7 lg:pr-8">
-                  <div className="divide-y divide-rule-subtle border-y border-rule-subtle font-mono text-xs tabular-nums">
+                  <div className="relative divide-y divide-rule-subtle border-y border-rule-subtle font-mono text-xs tabular-nums">
+                    <span
+                      aria-hidden="true"
+                      className="specular-beam-soft absolute inset-x-0 -top-px z-10"
+                    />
                     <LedgerRow
                       hoverTone="surface"
                       className="flex items-center justify-between gap-4 px-4 py-4"
@@ -623,7 +658,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                 </div>
 
                 {/* Right: Live metered bill readout */}
-                <div className="flex flex-col justify-between gap-6 border-t border-rule-subtle bg-surface p-6 md:p-8 lg:col-span-5 lg:border-l lg:border-t-0">
+                <div className="relative flex flex-col justify-between gap-6 border-t border-rule-subtle bg-surface p-6 md:p-8 lg:col-span-5 lg:border-l lg:border-t-0">
+                  <span
+                    aria-hidden="true"
+                    className="specular-beam absolute inset-x-0 -top-px z-10"
+                  />
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-label uppercase text-ink-muted">

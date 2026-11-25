@@ -318,8 +318,12 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
             <div
               role="list"
               aria-label="Active Flagsmith onboarding_flow variant"
-              className="inline-flex flex-wrap items-center gap-2 border border-rule-subtle bg-surface p-2"
+              className="relative inline-flex flex-wrap items-center gap-2 border border-rule-subtle bg-surface p-2"
             >
+              <span
+                aria-hidden="true"
+                className="specular-beam absolute inset-x-0 -top-px"
+              />
               {ONBOARDING_VARIANTS.map((item) => {
                 const isCurrent = item.id === activeVariant;
                 return (
@@ -327,7 +331,11 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
                     key={item.id}
                     role="listitem"
                     aria-current={isCurrent ? 'true' : undefined}
-                    className="relative inline-flex h-8 items-center px-4 font-mono text-micro uppercase tabular-nums"
+                    data-interactive="true"
+                    className={cn(
+                      'control-specular group/pill relative inline-flex h-8 items-center rounded-sm border border-transparent px-4 font-mono text-micro uppercase tabular-nums',
+                      !isCurrent && 'control-specular-soft',
+                    )}
                   >
                     {isCurrent && (
                       <motion.span
@@ -340,7 +348,9 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
                     <span
                       className={cn(
                         'relative z-10 transition-colors duration-150',
-                        isCurrent ? 'font-semibold text-accent' : 'text-ink-muted',
+                        isCurrent
+                          ? 'font-semibold text-accent'
+                          : 'text-ink-muted group-hover/pill:text-ink-primary',
                       )}
                     >
                       {item.label}
@@ -395,7 +405,11 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
                   </Button>
                 </div>
 
-                <div className="divide-y divide-rule-subtle border-y border-rule-subtle">
+                <div className="relative divide-y divide-rule-subtle border-y border-rule-subtle">
+                  <span
+                    aria-hidden="true"
+                    className="specular-beam absolute inset-x-0 -top-px z-10"
+                  />
                   {WIZARD_STEPS.map((step) => {
                     const isDone = Boolean(completedSteps[step.id]);
                     return (
@@ -461,7 +475,11 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
 
             {/* Variant 2: direct_dashboard */}
             {activeVariant === 'direct_dashboard' && (
-              <div className="border border-rule-subtle bg-surface p-6">
+              <div className="relative border border-rule-subtle bg-surface p-6">
+                <span
+                  aria-hidden="true"
+                  className="specular-beam absolute inset-x-0 -top-px"
+                />
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
                   <div className="space-y-2">
                     <span className="font-mono text-label uppercase text-ink-primary">
@@ -509,6 +527,7 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
                           {visibleLogs.map((log) => (
                             <motion.tr
                               key={log.id}
+                              data-ledger-row="true"
                               initial={{ opacity: 0, y: -6 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.24, ease: EASE_TECHNICAL }}
@@ -547,7 +566,11 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
             {/* Variant 3: sample_data */}
             {activeVariant === 'sample_data' && (
               <div className="space-y-8">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-y border-rule-subtle py-4">
+                <div className="relative flex flex-wrap items-center justify-between gap-4 border-y border-rule-subtle py-4">
+                  <span
+                    aria-hidden="true"
+                    className="specular-beam absolute inset-x-0 -top-px"
+                  />
                   <div className="flex flex-wrap items-center gap-4">
                     <Badge variant="solid">
                       SYNTHETIC TRACE #<AnimatedNumber value={syntheticTrace.burstRun} />
@@ -659,6 +682,7 @@ export const OnboardingSection: React.FC<OnboardingSectionProps> = ({
                       {syntheticTrace.popBreakdown.map((row) => (
                         <tr
                           key={row.pop}
+                          data-ledger-row="true"
                           className="group transition-colors duration-150 hover:bg-elevated"
                         >
                           <td className="relative px-4 py-4 text-ink-primary">
