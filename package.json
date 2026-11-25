@@ -16,10 +16,11 @@
     "flagsmith:logs": "docker compose -f docker/docker-compose.yml logs -f",
     "flagsmith:wait": "node scripts/wait-for-flagsmith.mjs",
     "bootstrap": "node scripts/bootstrap.mjs",
-    "setup": "npm run flagsmith:up && npm run flagsmith:wait && npm run bootstrap",
-    "dev": "npm run dev --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "down": "npm run flagsmith:down"
+    "setup": "node scripts/setup.mjs",
+    "dev": "npm run build -w toggledock && npm run dev -w demo",
+    "build": "npm run build -w toggledock && npm run build -w demo",
+    "typecheck": "npm run typecheck -w toggledock && npm run typecheck -w demo",
+    "test": "npm run test -w toggledock",
+    "down": "docker compose -f docker/docker-compose.yml down"
   }
 }
