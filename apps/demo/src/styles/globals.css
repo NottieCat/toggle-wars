@@ -44,6 +44,20 @@
   --space-12: 96px;
 }
 
+/* Neutral monochrome Matte Instrument Carbon boot state (zero accent flash before Flagsmith resolves) */
+[data-accent="boot"] {
+  --accent: #8A939E;
+  --accent-hover: #565F6B;
+  --accent-ink: #0A0C0E;
+  --accent-tint: rgba(138, 147, 158, 0.12);
+  --accent-border: rgba(138, 147, 158, 0.36);
+  --accent-ambient: rgba(138, 147, 158, 0.055);
+  --accent-spotlight: rgba(138, 147, 158, 0.045);
+  --accent-sheen: rgba(138, 147, 158, 0.05);
+  --accent-beam: rgba(138, 147, 158, 0.34);
+  --accent-beam-soft: rgba(138, 147, 158, 0.16);
+}
+
 /* Flagsmith theme_accent swaps (monochrome single-accent + <= 8% architectural washes) */
 [data-accent="emerald"] {
   --accent: #10B981;
@@ -264,5 +278,107 @@
     .control-specular::after {
       transition-duration: 1ms;
     }
+  }
+
+  /* Seamless full-canvas orbital reticle & breathing filament for BootScreen (GPU-only) */
+  .boot-wash-breathe {
+    will-change: opacity;
+    animation: boot-wash-pulse 4.8s ease-in-out infinite;
+  }
+
+  .boot-reticle-orbit {
+    transform-origin: center;
+    will-change: transform;
+    animation: boot-orbit-cw 3.6s linear infinite;
+  }
+
+  .boot-reticle-orbit-inner {
+    transform-origin: center;
+    will-change: transform;
+    animation: boot-orbit-ccw 6.4s linear infinite;
+  }
+
+  .boot-wordmark-breathe {
+    will-change: opacity;
+    animation: boot-wordmark-pulse 3.2s ease-in-out infinite;
+  }
+
+  .boot-filament {
+    height: 1px;
+    width: 160px;
+    transform-origin: center;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-beam) 50%,
+      transparent 100%
+    );
+    will-change: transform, opacity;
+    animation: boot-filament-breathe 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .boot-wash-breathe,
+    .boot-reticle-orbit,
+    .boot-reticle-orbit-inner,
+    .boot-wordmark-breathe,
+    .boot-filament {
+      animation: none;
+      transform: none;
+    }
+
+    .boot-filament {
+      opacity: 0.65;
+    }
+  }
+}
+
+@keyframes boot-wash-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes boot-orbit-cw {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes boot-orbit-ccw {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes boot-wordmark-pulse {
+  0%,
+  100% {
+    opacity: 0.84;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes boot-filament-breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleX(0.55);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scaleX(1);
   }
 }

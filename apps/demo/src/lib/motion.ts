@@ -84,6 +84,7 @@ export interface AnimatedNumberProps {
   prefix?: string;
   suffix?: string;
   useGrouping?: boolean;
+  delay?: number;
   className?: string;
 }
 
@@ -94,6 +95,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   prefix = '',
   suffix = '',
   useGrouping = true,
+  delay = 0,
   className,
 }) => {
   const prefersReduced = useReducedMotion();
@@ -122,6 +124,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   const initialNumericRef = React.useRef<number>(
     prefersReduced ? value : (from ?? value),
   );
+  const hasStartedRef = React.useRef<boolean>(false);
   const motionValue = useMotionValue(initialNumericRef.current);
   const springValue = useSpring(motionValue, {
     stiffness: SPRING_CALM.stiffness,
@@ -132,13 +135,24 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
   React.useEffect(() => {
     if (prefersReduced) {
+      hasStartedRef.current = true;
       motionValue.jump(value);
       springValue.jump(value);
       display.set(formatValue(value));
       return;
     }
+    if (delay > 0 && !hasStartedRef.current) {
+      const timerId = window.setTimeout(() => {
+        hasStartedRef.current = true;
+        motionValue.set(value);
+      }, delay * 1000);
+      return () => {
+        window.clearTimeout(timerId);
+      };
+    }
+    hasStartedRef.current = true;
     motionValue.set(value);
-  }, [value, prefersReduced, motionValue, springValue, display, formatValue]);
+  }, [value, delay, prefersReduced, motionValue, springValue, display, formatValue]);
 
   React.useEffect(() => {
     display.set(formatValue(springValue.get()));

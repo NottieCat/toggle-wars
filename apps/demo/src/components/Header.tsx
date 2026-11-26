@@ -1,9 +1,11 @@
 import * as React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Activity, ExternalLink } from 'lucide-react';
 import type { AdminHealthStatus } from 'toggledock';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { EASE_TECHNICAL } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 export interface HeaderProps {
@@ -15,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   adminProxyUrl,
   flagsmithDashboardUrl = 'http://localhost:8000',
 }) => {
+  const prefersReduced = useReducedMotion();
   const [health, setHealth] = React.useState<AdminHealthStatus | null>(null);
   const [checking, setChecking] = React.useState<boolean>(true);
 
@@ -73,7 +76,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-canvas">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-4 md:px-8">
+      <motion.div
+        initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: prefersReduced ? 0.01 : 0.5,
+          delay: prefersReduced ? 0 : 0.03,
+          ease: EASE_TECHNICAL,
+        }}
+        className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-4 md:px-8"
+      >
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <span
@@ -133,8 +145,19 @@ export const Header: React.FC<HeaderProps> = ({
             </a>
           </Button>
         </div>
-      </div>
-      <Separator />
+      </motion.div>
+      <motion.div
+        initial={prefersReduced ? { scaleX: 1 } : { scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{
+          duration: prefersReduced ? 0.01 : 0.65,
+          delay: prefersReduced ? 0 : 0.04,
+          ease: EASE_TECHNICAL,
+        }}
+        className="origin-left will-change-transform"
+      >
+        <Separator />
+      </motion.div>
     </header>
   );
 };

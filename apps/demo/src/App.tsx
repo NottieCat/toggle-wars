@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import { useFlags, useFlagsmith } from 'flagsmith/react';
 import {
   ToggleDock,
@@ -17,7 +17,13 @@ import { OnboardingSection } from '@/components/OnboardingSection';
 import { PricingSection } from '@/components/PricingSection';
 import { PromoBanner } from '@/components/PromoBanner';
 import { Separator } from '@/components/ui/separator';
-import { PRESENCE_TRANSITION } from '@/lib/motion';
+import {
+  parseValidAccent,
+  readLastKnownAccent,
+  readLocalAccentOverride,
+  writeLastKnownAccent,
+} from '@/lib/accent';
+import { EASE_TECHNICAL, PRESENCE_TRANSITION } from '@/lib/motion';
 
 const DEMO_FLAG_KEYS = [
   'promo_banner',
@@ -28,22 +34,6 @@ const DEMO_FLAG_KEYS = [
 ] as const;
 
 type DemoFlagKey = (typeof DEMO_FLAG_KEYS)[number];
-
-const VALID_ACCENTS: ReadonlySet<ToggleDockAccent> = new Set([
-  'emerald',
-  'amber',
-  'indigo',
-]);
-
-function resolveAccent(raw: FlagValue | undefined): ToggleDockAccent {
-  if (typeof raw === 'string') {
-    const normalized = raw.trim().toLowerCase() as ToggleDockAccent;
-    if (VALID_ACCENTS.has(normalized)) {
-      return normalized;
-    }
-  }
-  return 'emerald';
-}
 
 function normalizeTrait(raw: unknown): TraitValue {
   if (
@@ -58,6 +48,7 @@ function normalizeTrait(raw: unknown): TraitValue {
 }
 
 export default function App() {
+  const prefersReduced = useReducedMotion();
   const flagsmith = useFlagsmith();
   // Standard flagsmith/react hook handles initial SDK load.
   const sdkFlags = useFlags(DEMO_FLAG_KEYS);
@@ -137,12 +128,35 @@ export default function App() {
   const aiCopilotEnabled = effectiveFlags.ai_copilot_widget.enabled;
   const pricingVariant = String(effectiveFlags.pricing_experiment.value ?? 'control');
   const onboardingVariant = String(effectiveFlags.onboarding_flow.value ?? 'wizard');
-  const activeAccent = resolveAccent(effectiveFlags.theme_accent.value);
+  const activeAccent = React.useMemo<ToggleDockAccent>(() => {
+    const bridge = getActiveToggleDockBridge(flagsmith);
+    if (!bridge) {
+      const localOverride = readLocalAccentOverride();
+      if (localOverride) {
+        return localOverride;
+      }
+    }
+    const resolvedLive = parseValidAccent(effectiveFlags.theme_accent.value);
+    if (resolvedLive) {
+      return resolvedLive;
+    }
+    return readLastKnownAccent() ?? 'emerald';
+  }, [flagsmith, revision, effectiveFlags.theme_accent.value]);
 
-  // Sync root document accent attribute live whenever theme_accent updates.
-  React.useEffect(() => {
+  // Sync root document accent attribute synchronously before paint whenever theme_accent updates.
+  React.useLayoutEffect(() => {
     document.documentElement.dataset.accent = activeAccent;
   }, [activeAccent]);
+
+  // Persist last confirmed live accent so offline boot fallbacks preserve the user's real accent.
+  React.useEffect(() => {
+    if (
+      flagsmith.initialised &&
+      parseValidAccent(effectiveFlags.theme_accent.value) !== null
+    ) {
+      writeLastKnownAccent(activeAccent);
+    }
+  }, [flagsmith, flagsmith.initialised, effectiveFlags.theme_accent.value, activeAccent]);
 
   const adminProxyUrl =
     import.meta.env.VITE_FLAGSMITH_ADMIN_PROXY_URL || '/api/flagsmith-admin';
@@ -183,7 +197,16 @@ export default function App() {
         </div>
 
         <div className="relative overflow-x-clip">
-          <div aria-hidden="true" className="ambient-hero-wash z-0" />
+          <motion.div
+            aria-hidden="true"
+            className="ambient-hero-wash z-0 origin-top will-change-transform"
+            initial={prefersReduced ? { opacity: 1 } : { opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: prefersReduced ? 0.01 : 0.9,
+              ease: EASE_TECHNICAL,
+            }}
+          />
           <main className="relative z-10 mx-auto max-w-[1200px] px-6 pb-24 md:px-8">
           <HeroTelemetry
             identity={liveIdentity}

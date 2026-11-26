@@ -1,9 +1,86 @@
 <!doctype html>
-<html lang="en" data-accent="emerald">
+<html lang="en" data-accent="boot">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meridian Cloud — ToggleDock Flagsmith Playground</title>
+    <style>
+      html,
+      body {
+        background-color: #0A0C0E;
+        color: #F1F3F5;
+        margin: 0;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          var valid = { emerald: 1, amber: 1, indigo: 1 };
+          var normalize = function (value) {
+            if (typeof value !== 'string') return null;
+            var trimmed = value.trim().toLowerCase();
+            return valid[trimmed] ? trimmed : null;
+          };
+          var accent = null;
+
+          try {
+            var rawOverrides = window.localStorage.getItem('toggledock:overrides:v1');
+            if (rawOverrides) {
+              var overrides = JSON.parse(rawOverrides);
+              if (overrides && typeof overrides === 'object' && !Array.isArray(overrides)) {
+                var entry = overrides.theme_accent;
+                if (entry === undefined) {
+                  var keys = Object.keys(overrides);
+                  for (var i = 0; i < keys.length; i += 1) {
+                    if (keys[i].trim().toLowerCase().replace(/ /g, '_') === 'theme_accent') {
+                      entry = overrides[keys[i]];
+                      break;
+                    }
+                  }
+                }
+                if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+                  accent = normalize(entry.value);
+                }
+              }
+            }
+          } catch (_err) {}
+
+          if (!accent) {
+            try {
+              accent = normalize(window.localStorage.getItem('meridian:last-accent:v1'));
+            } catch (_err) {}
+          }
+
+          if (!accent) {
+            var readFlagsmithCache = function (raw) {
+              if (!raw) return null;
+              var parsed = JSON.parse(raw);
+              return parsed && parsed.flags && parsed.flags.theme_accent
+                ? normalize(parsed.flags.theme_accent.value)
+                : null;
+            };
+            try {
+              accent = readFlagsmithCache(window.localStorage.getItem('BULLET_TRAIN_DB'));
+            } catch (_err) {}
+            if (!accent) {
+              try {
+                for (var j = 0; j < window.localStorage.length; j += 1) {
+                  var storageKey = window.localStorage.key(j);
+                  if (storageKey && storageKey.indexOf('FLAGSMITH_DB_') === 0) {
+                    accent = readFlagsmithCache(window.localStorage.getItem(storageKey));
+                    if (accent) break;
+                  }
+                }
+              } catch (_err) {}
+            }
+          }
+
+          if (accent) {
+            document.documentElement.dataset.accent = accent;
+          }
+        } catch (_err) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

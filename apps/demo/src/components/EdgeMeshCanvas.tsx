@@ -262,8 +262,10 @@ export const EdgeMeshCanvas: React.FC<EdgeMeshCanvasProps> = ({
 
     const resizeCanvas = () => {
       const rect = wrapper.getBoundingClientRect();
-      width = Math.max(180, Math.floor(rect.width));
-      height = Math.max(160, Math.floor(rect.height));
+      const layoutWidth = wrapper.clientWidth || Math.floor(rect.width);
+      const layoutHeight = wrapper.clientHeight || Math.floor(rect.height);
+      width = Math.max(180, layoutWidth);
+      height = Math.max(160, layoutHeight);
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
